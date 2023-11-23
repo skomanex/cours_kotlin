@@ -1,5 +1,11 @@
 package com.example.cours_kotlin.exo
 
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
 import java.util.Random
 
 class CarBean(var brand:String = "-", var model:String = "-"){
@@ -95,3 +101,22 @@ val pictureList = arrayListOf(PictureData("https://picsum.photos/200", "ABCD", L
     PictureData("https://picsum.photos/202", "CDEF", LONG_TEXT),
     PictureData("https://picsum.photos/203", "EFGH", LONG_TEXT)
 )
+
+class MainViewModel : ViewModel() {
+    //_myList modifiable à l'intérieur de la classe, myList non modifiable à l'exterieur
+    private var _myList = mutableStateListOf<PictureData>()
+    val myList  : List<PictureData> = _myList
+
+    var searchText by mutableStateOf("")
+        private set
+
+    fun uploadSearchText(newText : String){
+        searchText = newText
+    }
+
+    fun loadData() {//Simulation de chargement de donnée
+        _myList.clear()
+        Thread.sleep(1000) //simule temps de la requête
+        _myList.addAll(pictureList)
+    }
+}

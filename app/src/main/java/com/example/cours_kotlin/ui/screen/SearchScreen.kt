@@ -1,17 +1,13 @@
 package com.example.cours_kotlin.ui.screen
 
-import android.app.usage.UsageEvents.Event
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -24,77 +20,59 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.example.cours_kotlin.R
+import com.example.cours_kotlin.Routes
+import com.example.cours_kotlin.exo.MainViewModel
 import com.example.cours_kotlin.exo.PictureData
-import com.example.cours_kotlin.exo.pictureList
-import com.example.cours_kotlin.ui.theme.Cours_kotlinTheme
 
-@Preview(showBackground = true)
-@Composable
-fun SearchScreenPreview() {
-    Cours_kotlinTheme {
-        Surface(modifier = Modifier.fillMaxWidth(),  color = Color.LightGray) {
-            SearchScreen()
-        }
-    }
-}
 
 @Composable
-fun SearchScreen(modifier: Modifier = Modifier){
-    var changedText by remember{ mutableStateOf("")}
-    val filterList = pictureList.filter{it.text.lowercase().contains(changedText.lowercase())}
+fun SearchScreen(
+    modifier: Modifier = Modifier,
+    navHostController: NavHostController? = null,
+    viewModel: MainViewModel
+){
+    var searchText = viewModel.searchText
+    val filterList = viewModel.myList.filter{it.text.lowercase().contains(searchText.lowercase())}
 
     Column(modifier) {
-        SearchBar(textValue = changedText) {
-            changedText = it
+        SearchBar(textValue = searchText) {
+            viewModel.uploadSearchText(it)
         }
         Spacer(modifier = Modifier.size(4.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(filterList.size) {
-                PictureRowItem(filterList[it])
+                PictureRowItem(filterList[it]){navHostController?.navigate(Routes.DetailScreen.addParam(it))}
             }
         }
         Spacer(modifier = Modifier.size(4.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center){
             CustomButton(text = "Clear Filters", icon = Icons.Filled.Clear){
-                changedText = ""
+                viewModel.uploadSearchText("")
             }
             Spacer(modifier = Modifier.size(20.dp))
             CustomButton(text = "Load Data", icon = Icons.Filled.Send)
             {
-
+                viewModel.loadData()
             }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun CustomButtonPreview(showBackground: Boolean = true){
-    Cours_kotlinTheme {
-        Column {
-            CustomButton("test"){}
         }
     }
 }
@@ -137,26 +115,17 @@ fun SearchBar(modifier: Modifier = Modifier, textValue: String, onValueChange:(S
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun PictureRowItemPreview() {
-    Cours_kotlinTheme {
-        Column {
-            PictureRowItem(pictureList[0])
-        }
-    }
-}
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun PictureRowItem(data: PictureData) {
-    var extend by remember {mutableStateOf(false)}
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .defaultMinSize(minHeight = 100.dp)
-        .clickable { extend = !extend }
-        .animateContentSize { _, _ -> }) {
-        Column {
+fun PictureRowItem(data: PictureData, onPictureClick: () -> Unit = {}) {
+    var extend by remember { mutableStateOf(false) }
+    val extendtext = if (extend) data.longText else data.longText.take(20)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 100.dp)
+    ) {
+        Column(Modifier.clickable { onPictureClick() }) {
             GlideImage(
                 model = data.url,
                 contentDescription = data.text,
@@ -168,7 +137,7 @@ fun PictureRowItem(data: PictureData) {
             )
         }
         Spacer(Modifier.size(4.dp))
-        Column {
+        Column(Modifier.clickable { extend = !extend }.animateContentSize()) {
             Text(
                 text = data.text,
                 fontSize = 20.sp,
@@ -177,7 +146,7 @@ fun PictureRowItem(data: PictureData) {
             )
             Spacer(Modifier.size(12.dp))
             Text(
-                text = if(!extend) data.longText.take(20) + "..." else data.longText,
+                text = extendtext,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 color = Color.Blue
