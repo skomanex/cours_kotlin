@@ -8,6 +8,16 @@ object WeatherAPI {
     private val client = OkHttpClient()
     private val gson = Gson()
 
+    fun loadWeatherAround(ville:String = "Paris"): List<PictureData>{
+        val json: String = sendGet("https://api.openweathermap.org/data/2.5/find?q=${ville}&cnt=5&appid=b80967f0a6bd10d23e44848547b26550&units=metric&lang=fr")
+
+        val data: WeatherAround = gson.fromJson(json, WeatherAround::class.java)
+
+        var result: List<PictureData> = data.list.map{(string, tempBean, windBean, icon) -> PictureData(url = "https://openweathermap.org/img/wn/${icon[0].icon}@4x.png", text = string, longText = "${tempBean.temp}°C\n${windBean.speed} m/s")}
+
+        return result
+    }
+
     fun loadWeather(ville:String = "Paris"): WeatherBean {
         //Eventuel contrôle
         //Réaliser la requête.

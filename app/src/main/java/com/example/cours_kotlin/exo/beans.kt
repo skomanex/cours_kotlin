@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Random
 
 class CarBean(var brand:String = "-", var model:String = "-"){
@@ -63,7 +66,11 @@ class ThermometerBean(private var min:Int, private var max:Int, value:Int){
     }
 }
 
-data class WeatherBean(var name:String, var main:TempBean, var wind:WindBean)
+data class WeatherAround(var list: ArrayList<WeatherBean>)
+
+data class WeatherBean(var name:String, var main:TempBean, var wind:WindBean, var weather:ArrayList<GetIcon>)
+
+data class GetIcon(var icon:String)
 
 data class TempBean(var temp:Double)
 
@@ -115,8 +122,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun loadData() {//Simulation de chargement de donnée
-        _myList.clear()
-        Thread.sleep(1000) //simule temps de la requête
-        _myList.addAll(pictureList)
+        viewModelScope.launch(Dispatchers.Default) {
+            _myList.clear()
+            val list = WeatherAPI.loadWeatherAround("Toulouse")
+            _myList.addAll(list)
+        }
     }
 }
